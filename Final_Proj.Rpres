@@ -1,0 +1,351 @@
+Regression Analysis On Mortality
+========================================================
+author: Ji Zhongce, Fu Yu
+width: 1440
+height: 900
+date: 2017/04/20
+
+Agenda
+========================================================
+Analysis on Regression Model on Mortality
+
+- Simple Linear Regression Analysis
+- Multiple Linear Regression Analysis
+- Summary
+
+Read Data
+========================================================
+
+```{r}
+# Change the directory of data in your personal computer
+Mortality_Data <- read.table("/Users/Tim/Desktop/Spring17/STAT597A/597_Final_Proj/smsa.dat", header = TRUE, na.strings = ".")
+```
+
+```{r}
+head(Mortality_Data)
+```
+
+Clear Up Data
+========================================================
+
+```{r}
+sum(is.na(Mortality_Data))
+```
+
+There we use **na.omit** method to omit the NA value
+
+```{r}
+Mortality_Data <- na.omit(Mortality_Data)
+```
+
+```{r}
+sum(is.na(Mortality_Data))
+```
+
+Heat Map for City
+========================================================
+For the Heat Map for each city, we convert the data into a map and the cycle size represents the how big the number of mortality is.
+
+In order to create Heat Map, we need to load the **leaflet** package which will help us create map, and then we use **addCircles** method to map which shows the mortality data for each city.
+
+What's more we have also use **geocode** in the package **ggmap** to get the **lon** and **lat** value for each city.
+
+Also we use **d3heatmap** method in package **d3heatmap** to view the data in tables with data visualization.
+
+Both method we use to make the data shows in map or table is based on the **htmlwidgets**.
+
+[Heat Map For Cities](http://127.0.0.1:7180)
+
+You have to run the shinyApp to see the Heat Map for Cities
+
+Scatterplot Matrix1
+========================================================
+
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+pairs(Mortality ~ JanTemp + JulyTemp + RelHum + Rain + Education, data=Mortality_Data, main="Simple Scatterplot Matrix") # Get scatter plots for mortality and each variables.
+```
+
+Scatterplot Matrix2
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+pairs(Mortality ~ PopDensity + X.NonWhite + X.WC + pop + pop.house, data=Mortality_Data, main="Simple Scatterplot Matrix") # Get scatter plots for mortality and each variables.
+```
+
+Scatterplot Matrix3
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+pairs(Mortality ~ income + HCPot + NOxPot + SO2Pot + NOx, data=Mortality_Data, main="Simple Scatterplot Matrix") # Get scatter plots for mortality and each variables.
+```
+
+Box Plot For Each Variable
+========================================================
+```{r}
+
+Remove.Outliers <- function(Col_name){
+  # First we draw the boxplot
+  boxplot(Mortality_Data[,Col_name], main = Col_name)
+  # Then we find the outliers
+  outliers <- boxplot.stats(Mortality_Data[,Col_name])$out
+  i=1
+  # Change the outlier value to NA
+  while(i <= length(Mortality_Data[,Col_name])){
+    if(Mortality_Data[,Col_name][i] %in% outliers){
+      Mortality_Data[,Col_name][i] <- NA
+    }
+    i <- i+1
+  }
+  return(Mortality_Data)
+}
+```
+
+Box Plot For Each Variable
+========================================================
+Here we get the name for each columns
+```{r}
+col_name <- colnames(Mortality_Data)[2:17]
+```
+
+Box Plot For Each Variable
+========================================================
+First we will set the parameter for each box-plot so we can have a 4 by 4 matrix
+```{r, fig.align='center', fig.width = 10, fig.height = 6}
+par(mfrow = c(4, 4))
+par(mar = c(2, 2, 2, 2), mgp = c(1.8,0.8,0), oma = c(1, 1, 1, 1))
+i <- 1
+# use for loop to change outliers in each vairable to NA
+while(i <= length(col_name)){
+  Mortality_Data <- Remove.Outliers(col_name[i])
+  i <- i + 1
+}
+```
+
+Remove outliers For Each Variable
+========================================================
+Then we need to remove all the outliers for each variables
+```{r}
+sum(is.na(Mortality_Data))
+```
+
+There we use **na.omit** method to omit the NA value
+
+```{r}
+Mortality_Data <- na.omit(Mortality_Data)
+```
+
+```{r}
+sum(is.na(Mortality_Data))
+```
+
+Correlation For Each Variable
+========================================================
+Then we create correlation matrix
+```{r, fig.align='center'}
+library(corrplot)
+par(mfrow = c(1, 1))
+correlation_matrix <- cor(Mortality_Data[,2:17])
+corrplot(correlation_matrix, method = "circle")
+```
+
+Example For the Simple Linear Regression
+========================================================
+```{r}
+fit <- lm(Mortality ~ JanTemp, Mortality_Data) # Construct a simple linear regression model.
+fit # Get parameters estimates for this model.
+```
+
+Plot Estimated Linear function
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+plot(x = Mortality_Data$JanTemp, y = Mortality_Data$Mortality, xlab = "JanTemp", ylab = "Mortality")
+abline(fit, col = "red") # Plot the line of linear regression model for JanTemp.
+```
+
+ANOVA Table
+========================================================
+```{r}
+anova(fit)
+```
+
+Confidence Interval
+========================================================
+```{r}
+confint(fit, level = 0.90) 
+```
+
+```{r}
+confint(fit, level = 0.95) 
+```
+
+Residual Plots
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+plot(fit$residuals, ylab = "Residual", xlab = "JanTemp") # Plot Residual vs. variable
+abline(0,0, col = "red")
+```
+
+Residual Plots
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+plot(fit$fitted.values,fit$residuals) # Plot Residual vs. fitted value
+abline(0,0, col = "red")
+```
+
+Q-Q Plots
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+attach(Mortality_Data) # How to get the QQ plot.
+qqnorm(fit$residuals)
+qqline(fit$residuals) 
+```
+
+Transformation
+========================================================
+```{r}
+Mortality_Data$NOxPot
+```
+
+```{r}
+Mortality_Data$NOxPot <- sqrt(Mortality_Data$NOxPot)
+```
+
+```{r}
+Mortality_Data$NOxPot
+```
+
+```{r echo=FALSE}
+Mortality_Data$SO2Pot <- sqrt(Mortality_Data$SO2Pot)
+```
+
+Simple Linear Regression Analysis with transformation
+========================================================
+```{r}
+fit1 <- lm(Mortality ~ NOxPot, Mortality_Data) # Construct a simple linear regression model.
+
+fit1 # Get parameters estimates for this model.
+```
+
+Plot Estimated Linear function
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+plot(x = Mortality_Data$NOxPot, y = Mortality_Data$Mortality, xlab = "NOxPot", ylab = "Mortality")
+abline(fit1, col = "red") # Plot the line of linear regression model for NOxPot
+```
+
+ANOVA Table
+========================================================
+```{r}
+anova(fit1) # Get ANOVA table of variables.
+```
+
+
+Residual Plots
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+plot(fit1$residuals, ylab = "Residual", xlab = "NOxPot") # Plot Residual vs. variable
+abline(0,0, col = "red")
+```
+
+Residual Plots
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+plot(fit1$fitted.values,fit1$residuals) # Plot Residual vs. fitted value
+abline(0,0, col = "red")
+```
+
+Q-Q Plots
+========================================================
+```{r, fig.align='center', fig.width = 15, fig.height = 9}
+attach(Mortality_Data) # How to get the QQ plot.
+qqnorm(fit1$residuals)
+qqline(fit1$residuals)
+```
+
+
+Multiple Linear Regression Analysis
+========================================================
+After we draw Q-Q plot for each variable, we find some variables can be dropped because after transformation, Q-Q plot is still straight
+
+The rest variable will be JulyTemp, Rain, Education, PopDensity, income ,X.NonWhite, X.WC, pop.house, SO2Pot, NOxPot. And the SO2Pot and NOxPot have been transformed.
+
+Estimated Parameter
+========================================================
+```{r}
+model1 <- lm(Mortality ~ JulyTemp + Rain + Education + PopDensity + X.NonWhite + X.WC + pop.house + SO2Pot + NOxPot,data=Mortality_Data)
+# This will return the coefficients for each variables
+model1$coefficients
+```
+
+Best Model Selection
+========================================================
+```{r}
+library(MASS)
+```
+
+In the MASS library, there is a function called **stepAIC**. 
+
+**stepAIC** is a function which will performs **Akaike Information Criterion** stepwise model selection according to specific direction such as **backward**, **forward**. 
+
+Best Model Selection
+========================================================
+```{r }
+fit3 <- lm(Mortality ~ JulyTemp + Rain + Education + PopDensity + X.NonWhite + X.WC + pop.house + SO2Pot + NOxPot,data=Mortality_Data)
+step <- stepAIC(fit3, direction="both")
+```
+
+Best Model Selection
+========================================================
+```{r }
+step$anova # display results
+```
+
+So we have best model with variables, **JulyTemp**, **Rain**, **PopDensity**, **X.NonWhite**, **X.WC**, **pop.house**, **NOxPot**.
+
+Best Model Selection
+========================================================
+
+There is another package called **leaps**, **leaps** package provide many useful function including **regsubsets** that can help do Regression Subset Selection.
+
+```{r}
+library(leaps)
+```
+
+Here we will use **regsubsets** method which will take in a formula and the **method** attributes will decide the algorithms to use such as **exhaustive search**, **forward** or **backward stepwise**, or **sequential replacement**
+
+```{r}
+leaps<-regsubsets(Mortality ~ JulyTemp + Rain + Education + PopDensity + X.NonWhite + X.WC + pop.house + SO2Pot + NOxPot, method="backward", data=Mortality_Data)
+```
+
+Best Model Selection
+========================================================
+Then we use **summary** to get the summary of the selection
+```{r}
+# view results 
+summary(leaps)
+```
+
+Best Model Selection
+========================================================
+In Order to have a better visual understanding, we can plot the selection according to different cirterions such as **Cp**, **adjr2**, **r2** or **bic**.
+Here we show the **adjr2** and **Cp**
+```{r ,fig.align='center', fig.width = 20}
+par(mfrow = c(1, 2))
+plot(leaps,scale = "adjr2")
+plot(leaps,scale = "Cp")
+```
+
+Best Model Selection
+========================================================
+Here we show the **r2** and **bic**
+```{r ,fig.align='center', fig.width = 20}
+par(mfrow = c(1, 2))
+plot(leaps,scale = "r2")
+plot(leaps,scale = "bic")
+```
+
+Best Model Conclusion 
+========================================================
+According to the best model selection, we need to select the model with largest **adjr2** and the model with cP that most close to p which is number of predictors including intercept. So according to the selection rule, we have largest **adjr2** value is 0.62 and the model is **JulyTemp**, **Rain**, **PopDensity**, **X.NonWhite**, **X.WC**, **pop.house**, **Square root of NOxPot**. 
+
+And then according to **Cp** criterion, we can find the best model is **JulyTemp**, **Rain**, **PopDensity**, **X.NonWhite**,  **X.WC**, **pop.house**. 
+
+Then we hvae those two models, we can do some further analysis such as check VIF or validate the data with model to get a better model.
